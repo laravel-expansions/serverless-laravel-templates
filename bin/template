@@ -1,6 +1,7 @@
 #!/usr/bin/bash
 
-echo pwd
+ROOT_PATH=$(pwd)
+PACKAGE_PATH=$ROOT_PATH/node_modules/serverless-laravel-templates
 
 read -p "App Name [sam-app]: " name
 APP_NAME=${name:-sam-app}
@@ -37,26 +38,28 @@ else
   exit 0
 fi
 
-# mkdir $APP_NAME
+if [ "$TEMPLETE_TYPE" == "SAM Default Template" ]; then
+  mkdir $ROOT_PATH/$APP_NAME
+  cd $ROOT_PATH/$APP_NAME
+  composer create-project laravel/laravel:^8.0 laravel
+  cd $ROOT_PATH/$APP_NAME/laravel
+  composer require bref/bref bref/laravel-bridge --update-with-dependencies
 
-# cd $APP_NAME
-# composer create-project laravel/laravel:^8.0 laravel
-# cd laravel
-# composer require bref/bref bref/laravel-bridge --update-with-dependencies
-# if [ "$TEMPLETE_TYPE" == "SAM Default Template + Kinesis Trigger" ]; then
-#   composer require laravel-expansions/serverless-function
-#   php artisan vendor:publish --tag=expantion-function
-# fi
-# cd ../../
+  cp $PACKAGE_PATH/src/Makefile $ROOT_PATH/$APP_NAME/laravel/Makefile
+  cp $PACKAGE_PATH/templates/sam.default.template.yaml $ROOT_PATH/$APP_NAME/template.yaml
+fi
 
+if [ "$TEMPLETE_TYPE" == "SAM Default Template + Kinesis Trigger" ]; then
+  mkdir $ROOT_PATH/$APP_NAME
+  cd $ROOT_PATH/$APP_NAME
+  composer create-project laravel/laravel:^8.0 laravel
+  cd $ROOT_PATH/$APP_NAME/laravel
+  composer require bref/bref bref/laravel-bridge --update-with-dependencies
+  composer require laravel-expansions/serverless-function
+  php artisan vendor:publish --tag=expantion-function
 
-# cp ./src/Makefile $APP_NAME/laravel/Makefile
-# if [ "$TEMPLETE_TYPE" == "SAM Default Template" ]; then
-#   cp ./src/templates/sam.default.template.yaml ./$APP_NAME/template.yaml
-# fi
-# if [ "$TEMPLETE_TYPE" == "SAM Default Template + Kinesis Trigger" ]; then
-#   cp -r ./src/worker ./$APP_NAME/worker
-#   cp ./src/templates/sam.kinesis.template.yaml ./$APP_NAME/template.yaml
-# fi
+  cp $PACKAGE_PATH/src/Makefile $ROOT_PATH/$APP_NAME/laravel/Makefile
+  cp $PACKAGE_PATH/templates/sam.kinesis.template.yaml $ROOT_PATH/$APP_NAME/template.yaml
+fi
 
 exit 0

@@ -7,6 +7,6 @@
   "license": "MIT",
   "private": false,
   "bin": {
-    "laravel-expansions-serverless-template": "bin/template"
+    "template": "bin/template"
   }
 }
