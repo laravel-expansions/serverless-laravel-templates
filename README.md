@@ -1,2 +1,2 @@
-# serverless-laravel-templates
+# Serverless Laravel Templates
 Serverless Laravel Templates for AWS
