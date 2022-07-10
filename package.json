@@ -6,7 +6,7 @@
   "author": "Madaka Heri <madakaheri@gmail.com>",
   "license": "MIT",
   "private": false,
-  "scripts": {
-    "template": "sh template"
+  "bin": {
+    "laravel-expansions-serverless-template": "bin/template"
   }
 }
