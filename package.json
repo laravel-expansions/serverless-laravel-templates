@@ -1,0 +1,12 @@
+{
+  "name": "serverless-laravel-templates",
+  "version": "1.0.0",
+  "description": "Serverless Laravel Template Builder",
+  "repository": "https://github.com/laravel-expansions/serverless-laravel-templates.git",
+  "author": "Madaka Heri <madakaheri@gmail.com>",
+  "license": "MIT",
+  "private": false,
+  "scripts": {
+    "template": "sh template"
+  }
+}

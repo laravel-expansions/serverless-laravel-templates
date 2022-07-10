@@ -1,0 +1,250 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Transform: AWS::Serverless-2016-10-31
+Description: >
+  SAM Serverless Laravel + KinesisDataStream Template
+  
+Parameters:
+  env:
+    Type: String
+    Default: dev
+  appName:
+    Type: String
+  appEnv:
+    Type: String
+    Default: local
+  appKey:
+    Type: String
+    Default: base64:J5E9x+cUmBkfvYibrz55Sz2O1fpvTn+Mpe/6WwFmpZ8=
+  appDebug:
+    Type: String
+    Default: true
+  appUrl:
+    Type: String
+    Default: http://localhost
+  # dbHost:
+  #   Type: String
+  # dbPort:
+  #   Type: String
+  #   Default: 3306
+  # dbDatabase:
+  #   Type: String
+  # dbUsername:
+  #   Type: String
+  # dbPassword:
+  #   Type: String
+  # dbSecurityGroupIds:
+  #   Type: CommaDelimitedList
+  # dbSubnetIds:
+  #   Type: CommaDelimitedList
+  streamName:
+    Type: String
+  streamArn:
+    Type: String
+
+# More info about Globals: https://github.com/awslabs/serverless-application-model/blob/master/docs/globals.rst
+Globals:
+  Function:
+    Environment:
+      Variables:
+        ENV: !Ref env
+        APP_NAME: !Ref appName
+        APP_ENV: !Ref appEnv
+        APP_KEY: !Ref appKey
+        APP_DEBUG: !Ref appDebug
+        APP_URL: !Ref appUrl
+        # DB_HOST: !Ref dbHost
+        # DB_PORT: !Ref dbPort
+        # DB_DATABASE: !Ref dbDatabase
+        # DB_USERNAME: !Ref dbUsername
+        # DB_PASSWORD: !Ref dbPassword
+        STREAM_NAME: !Ref streamName
+        FILESYSTEM_DRIVER: s3
+        MAIL_MAILER: ses
+
+Resources:
+  
+  # S3
+
+  storage:
+    Type: AWS::S3::Bucket
+  
+  # Lambda Functions
+
+  laravel:
+    Type: AWS::Serverless::Function
+    Metadata:
+      BuildMethod: makefile
+    Properties:
+      FunctionName: !Sub "${AWS::StackName}-laravel-${env}"
+      Runtime: provided.al2
+      Layers:
+        # bref runtimes: https://runtimes.bref.sh
+        - 'arn:aws:lambda:ap-northeast-1:209497400698:layer:php-81-fpm:24'
+      CodeUri: laravel
+      Handler: public/index.php
+      MemorySize: 512
+      Timeout: 28 # in seconds (API Gateway has a timeout of 29 seconds)
+      Environment:
+        Variables:
+          AWS_BUCKET: !Ref storage
+      # VpcConfig:
+      #   SecurityGroupIds: !Ref dbSecurityGroupIds
+      #   SubnetIds: !Ref dbSubnetIds
+      Policies:
+        - AWSLambdaBasicExecutionRole
+        - KinesisCrudPolicy:
+            StreamName:
+              !Ref streamName
+        - Statement:
+          - Effect: Allow
+            Action: s3:*
+            Resource:
+              - !Sub '${storage.Arn}' # the storage bucket
+              - !Sub '${storage.Arn}/*' # and everything inside
+        - Statement:
+            - Effect: Allow
+              Action:
+                - ses:SendRawEmail
+              Resource:
+                !Sub "arn:${AWS::Partition}:ses:${AWS::Region}:${AWS::AccountId}:identity/*"
+      Events:
+        Api:
+          Type: HttpApi
+          Properties:
+            Path: /{proxy+}
+            Method: ANY
+
+  artisan:
+    Type: AWS::Serverless::Function
+    Metadata:
+      BuildMethod: makefile
+    Properties:
+      FunctionName: !Sub "${AWS::StackName}-artisan-${env}"
+      Runtime: provided.al2
+      Layers:
+        # bref runtimes: https://runtimes.bref.sh
+        - 'arn:aws:lambda:ap-northeast-1:209497400698:layer:php-81:24'
+        - 'arn:aws:lambda:ap-northeast-1:209497400698:layer:console:63'
+      CodeUri: laravel
+      Handler: artisan
+      MemorySize: 512
+      Timeout: 300
+      Environment:
+        Variables:
+          AWS_BUCKET: !Ref storage
+      # VpcConfig:
+      #   SecurityGroupIds: !Ref dbSecurityGroupIds
+      #   SubnetIds: !Ref dbSubnetIds
+      Policies:
+        - AWSLambdaBasicExecutionRole
+        - KinesisCrudPolicy:
+            StreamName:
+              !Ref streamName
+        - Statement:
+          - Effect: Allow
+            Action: s3:*
+            Resource:
+              - !Sub '${storage.Arn}' # the storage bucket
+              - !Sub '${storage.Arn}/*' # and everything inside
+        - Statement:
+            - Effect: Allow
+              Action:
+                - ses:SendRawEmail
+              Resource:
+                !Sub "arn:${AWS::Partition}:ses:${AWS::Region}:${AWS::AccountId}:identity/*"
+      Events:
+        scheduleRun:
+          Type: Schedule
+          Properties:
+            # Originally, the schedule is checked every minute, but the delay is increased.
+            Schedule: 'cron(0/30 * * * ? *)'
+            Input: '"schedule:run"'
+
+
+  # PutRecordTester:
+  #   Type: AWS::Serverless::Function
+  #   Properties:
+  #     CodeUri: streamPutTester
+  #     Handler: index.handler
+  #     Runtime: nodejs14.x
+  #     Architectures:
+  #       - x86_64
+  #     Policies:
+  #       - AWSLambdaBasicExecutionRole
+  #       - KinesisCrudPolicy:
+  #           StreamName:
+  #             !Ref streamName
+  worker:
+    Type: AWS::Serverless::Function
+    Properties:
+      FunctionName: !Sub "${AWS::StackName}-worker-${env}"
+      CodeUri: worker
+      Handler: index.handler
+      Runtime: nodejs14.x
+      Architectures:
+        - x86_64
+      Environment:
+        Variables:
+          HANDLER_FUNCTION_NAME: !Ref handler
+      Policies:
+        - AWSLambdaBasicExecutionRole
+        - LambdaInvokePolicy:
+            FunctionName:
+              !Ref handler
+      Events:
+        trigger:
+          Type: Kinesis
+          Properties:
+            Stream: !Ref streamArn
+            Enabled: true
+            StartingPosition: TRIM_HORIZON # TRIM_HORIZON / LATEST
+            BatchSize: 100
+            MaximumRetryAttempts: 1
+            FilterCriteria: 
+              Filters: 
+                - Pattern: !Sub '{"data":{"channel": ["${appName}"]}}'
+  handler:
+    Type: AWS::Serverless::Function
+    Metadata:
+      BuildMethod: makefile
+    Properties:
+      FunctionName: !Sub "${AWS::StackName}-handler-${env}"
+      Runtime: provided.al2
+      Layers:
+        # bref runtimes: https://runtimes.bref.sh
+        - 'arn:aws:lambda:ap-northeast-1:209497400698:layer:php-81:24'
+      CodeUri: laravel
+      Handler: handler
+      MemorySize: 512
+      Timeout: 300
+      Environment:
+        Variables:
+          AWS_BUCKET: !Ref storage
+      # VpcConfig:
+      #   SecurityGroupIds: !Ref dbSecurityGroupIds
+      #   SubnetIds: !Ref dbSubnetIds
+      Policies:
+        - AWSLambdaBasicExecutionRole
+        - KinesisCrudPolicy:
+            StreamName:
+              !Ref streamName
+        - Statement:
+          - Effect: Allow
+            Action: s3:*
+            Resource:
+              - !Sub '${storage.Arn}' # the storage bucket
+              - !Sub '${storage.Arn}/*' # and everything inside
+        - Statement:
+            - Effect: Allow
+              Action:
+                - ses:SendRawEmail
+              Resource:
+                !Sub "arn:${AWS::Partition}:ses:${AWS::Region}:${AWS::AccountId}:identity/*"
+
+Outputs:
+  Api:
+    Description: "API Gateway endpoint URL for Prod stage for laravel"
+    Value: !Sub "https://${ServerlessHttpApi}.execute-api.${AWS::Region}.amazonaws.com/"
+  ArtisanCommand:
+    Description: "Install Required: AWS SDK"
+    Value: !Sub "laravel/vendor/bin/bref cli --region ${AWS::Region} ${artisan} -- [command]"
