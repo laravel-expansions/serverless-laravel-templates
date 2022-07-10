@@ -1,4 +1,4 @@
-#!/usr/bin/bash
+#!/bin/bash
 
 ROOT_PATH=$(pwd)
 PACKAGE_PATH=$ROOT_PATH/node_modules/serverless-laravel-templates
