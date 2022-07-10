@@ -1,5 +1,5 @@
 {
-  "name": "serverless-laravel-templates",
+  "name": "@laravel-expansions/serverless-laravel-templates",
   "version": "1.0.0",
   "description": "Serverless Laravel Template Builder",
   "repository": "https://github.com/laravel-expansions/serverless-laravel-templates.git",
