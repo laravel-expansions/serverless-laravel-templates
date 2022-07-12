@@ -11,5 +11,5 @@ yarn global add  @laravel-expansions/serverless-laravel-templates
 
 Run:
 ```
-template
+template create
 ```

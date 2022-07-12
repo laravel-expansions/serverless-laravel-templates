@@ -1,65 +1,105 @@
 #!/bin/bash
 
-ROOT_PATH=$(pwd)
-PACKAGE_PATH=$ROOT_PATH/node_modules/serverless-laravel-templates
+function version () {
+  PACKAGE_VERSION=$(node -e "console.log(require('./package.json').version)")
+  echo 
+  echo "version: v$PACKAGE_VERSION"
+  echo 
+}
 
-read -p "App Name [sam-app]: " name
-APP_NAME=${name:-sam-app}
+function info () {
+  PACKAGE_VERSION=$(node -e "console.log(require('./package.json').version)")
+  echo 
+  echo "Serverless Laravel Template CLI"
+  version
+  echo "Commands:"
+  echo 
+  echo "  create\t: Create new app."
+  echo "  update\t: Updae this CLI."
+  echo 
+  echo 
+}
 
+function create () {
+  while :
+  do 
+    read -p "App Name [serverless-laravel-app]: " name
+    APP_NAME=${name:-serverless-laravel-app}
+    if [ -d $APP_NAME ]; then
+        echo 'same name directory exist.'
+    else
+        break
+    fi
+  done
 
-PS3='Please Select Template Number: '
-select TEMPLETE_TYPE in "SAM Default Template" "SAM Default Template + Kinesis Trigger"
-do
-  if [ -n "$TEMPLETE_TYPE" ]; then
-    break
-  else
-    echo 'invvalid value, input again.'
+  PS3='Please Select Template Number: '
+  select TEMPLETE_TYPE in "SAM Default Template" "SAM Default Template + Kinesis Trigger"
+  do
+    if [ -n "$TEMPLETE_TYPE" ]; then
+      break
+    else
+      echo 'invvalid value, input again.'
+    fi
+  done
+
+  echo
+  echo "| Template Result:"
+  echo "|"
+  echo "|  Name: $APP_NAME"
+  echo "|  Type: $TEMPLETE_TYPE"
+  echo
+
+  read -p "Create now？ (y/n) :" yn
+  YN=${yn:-y}
+
+  if [ "${YN}" = "y" ]; then
     echo
+  else
+    echo
+    echo "Aborted!"
+    exit 0
   fi
+
+  if [ "$TEMPLETE_TYPE" == "SAM Default Template" ]; then
+    git clone https://github.com/laravel-expansions/serverless-laravel-template-sam-default $APP_NAME
+    cd $APP_NAME
+    composer install
+    cp .env.example .env
+    php artisan key:generate
+  fi
+
+  if [ "$TEMPLETE_TYPE" == "SAM Default Template + Kinesis Trigger" ]; then
+    git clone https://github.com/laravel-expansions/serverless-laravel-template-sam-kinesis $APP_NAME
+    cd $APP_NAME/laravel
+    composer install
+    cp .env.example .env
+    php artisan key:generate
+  fi
+
+  echo
+  echo '🎉 Setup successfully.'
+  echo 
+}
+
+function update () {
+  yarn global add @laravel-expansions/serverless-laravel-templates
+}
+
+while getopts vh OPT
+do
+  case $OPT in
+    v)
+      version; exit 0;;
+    h)
+      info; exit 0;;
+  esac
 done
-echo "> $TEMPLETE_TYPE"
 
-echo
-
-echo "| Template Result:"
-echo "|"
-echo "|  App Name: $APP_NAME"
-echo "|  Template Type: $TEMPLETE_TYPE"
-echo
-
-read -p "Create this app？ (y/n) :" yn
-YN=${yn:-y}
-
-if [ "${YN}" = "y" ]; then
-  echo
-else
-  echo
-  echo "Aborted!"
-  exit 0
-fi
-
-if [ "$TEMPLETE_TYPE" == "SAM Default Template" ]; then
-  mkdir $ROOT_PATH/$APP_NAME
-  cd $ROOT_PATH/$APP_NAME
-  composer create-project laravel/laravel:^8.0 laravel
-  cd $ROOT_PATH/$APP_NAME/laravel
-  composer require bref/bref bref/laravel-bridge --update-with-dependencies
-
-  cp $PACKAGE_PATH/src/Makefile $ROOT_PATH/$APP_NAME/laravel/Makefile
-  cp $PACKAGE_PATH/templates/sam.default.template.yaml $ROOT_PATH/$APP_NAME/template.yaml
-fi
-
-if [ "$TEMPLETE_TYPE" == "SAM Default Template + Kinesis Trigger" ]; then
-  mkdir $ROOT_PATH/$APP_NAME
-  cd $ROOT_PATH/$APP_NAME
-  composer create-project laravel/laravel:^8.0 laravel
-  cd $ROOT_PATH/$APP_NAME/laravel
-  composer require bref/bref bref/laravel-bridge --update-with-dependencies
-  composer require laravel-expansions/serverless-function
-  php artisan vendor:publish --tag=expantion-function
-
-  cp $PACKAGE_PATH/src/Makefile $ROOT_PATH/$APP_NAME/laravel/Makefile
-  cp $PACKAGE_PATH/templates/sam.kinesis.template.yaml $ROOT_PATH/$APP_NAME/template.yaml
-fi
-
-exit 0
+case $1 in
+  create)
+    create;;
+  update)
+    update;;
+  *)
+    info;;
+esac

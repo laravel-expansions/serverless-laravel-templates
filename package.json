@@ -6,6 +6,9 @@
   "author": "Madaka Heri <madakaheri@gmail.com>",
   "license": "MIT",
   "private": false,
+  "scripts": {
+    "test": "sh bin/template"
+  },
   "bin": {
     "template": "bin/template"
   }
