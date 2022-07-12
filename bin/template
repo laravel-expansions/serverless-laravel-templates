@@ -1,21 +1,22 @@
 #!/bin/bash
 
+SCRIPT_DIR=$(cd $(dirname $0); pwd)
+
 function version () {
-  PACKAGE_VERSION=$(node -e "console.log(require('./package.json').version)")
+  PACKAGE_VERSION=$(node -e "console.log(require('$SCRIPT_DIR/package.json').version)")
   echo 
   echo "version: v$PACKAGE_VERSION"
   echo 
 }
 
 function info () {
-  PACKAGE_VERSION=$(node -e "console.log(require('./package.json').version)")
   echo 
   echo "Serverless Laravel Template CLI"
   version
   echo "Commands:"
   echo 
-  echo "  create\t: Create new app."
-  echo "  update\t: Updae this CLI."
+  echo "  create  : Create new app."
+  echo "  update  : Updae this CLI."
   echo 
   echo 
 }
