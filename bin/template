@@ -3,7 +3,8 @@
 SCRIPT_DIR=$(cd $(dirname $0); pwd)
 
 function version () {
-  PACKAGE_VERSION=$(node -e "console.log(require('$SCRIPT_DIR/package.json').version)")
+  # PACKAGE_VERSION=$(node -e "console.log(require('$SCRIPT_DIR/package.json').version)")
+  PACKAGE_VERSION=1.0.2
   echo 
   echo "version: v$PACKAGE_VERSION"
   echo 
