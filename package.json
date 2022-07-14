@@ -1,6 +1,6 @@
 {
   "name": "@laravel-expansions/serverless-laravel-templates",
-  "version": "1.0.3",
+  "version": "v1.0.4",
   "description": "Serverless Laravel Template Builder",
   "repository": {
     "type": "git",
@@ -9,7 +9,7 @@
   "bugs": {
     "url": "https://github.com/laravel-expansions/serverless-laravel-templates/issues"
   },
-  "homepage": "https://github.com/laravel-expansions/serverless-laravel-templates#readme"
+  "homepage": "https://github.com/laravel-expansions/serverless-laravel-templates#readme",
   "keywords": [
     "laravel",
     "serverless",
