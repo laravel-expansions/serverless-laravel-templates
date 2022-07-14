@@ -1,8 +1,23 @@
 {
   "name": "@laravel-expansions/serverless-laravel-templates",
-  "version": "1.0.2",
+  "version": "1.0.3",
   "description": "Serverless Laravel Template Builder",
-  "repository": "https://github.com/laravel-expansions/serverless-laravel-templates.git",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/laravel-expansions/serverless-laravel-templates.git"
+  },
+  "bugs": {
+    "url": "https://github.com/laravel-expansions/serverless-laravel-templates/issues"
+  },
+  "homepage": "https://github.com/laravel-expansions/serverless-laravel-templates#readme"
+  "keywords": [
+    "laravel",
+    "serverless",
+    "template",
+    "aws",
+    "sam",
+    "lambda"
+  ],
   "author": "Madaka Heri <madakaheri@gmail.com>",
   "license": "MIT",
   "private": false,
