@@ -10,9 +10,6 @@
     "url": "https://github.com/laravel-expansions/serverless-laravel-templates/issues"
   },
   "homepage": "https://github.com/laravel-expansions/serverless-laravel-templates#readme",
-  "publishConfig": {
-    "@laravel-expansions:registry": "https://npm.pkg.github.com"
-  },
   "keywords": [
     "laravel",
     "serverless",
