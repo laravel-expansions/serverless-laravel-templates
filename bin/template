@@ -63,6 +63,7 @@ function create () {
 
   if [ "$TEMPLETE_TYPE" == "SAM Default Template" ]; then
     git clone https://github.com/laravel-expansions/serverless-laravel-template-sam-default $APP_NAME
+    rm -r -f .git
     cd $APP_NAME
     composer install
     cp .env.example .env
@@ -71,6 +72,7 @@ function create () {
 
   if [ "$TEMPLETE_TYPE" == "SAM Default Template + Kinesis Trigger" ]; then
     git clone https://github.com/laravel-expansions/serverless-laravel-template-sam-kinesis $APP_NAME
+    rm -r -f .git
     cd $APP_NAME/laravel
     composer install
     cp .env.example .env
